@@ -7,6 +7,8 @@
   const allowTopMissing = document.getElementById("allowTopMissing");
   const startBtn = document.getElementById("startBtn");
   const startError = document.getElementById("startError");
+  const startScoreInput = document.getElementById("startScoreInput");
+
 
   const stopBtn = document.getElementById("stopBtn");
   const scoreLabel = document.getElementById("scoreLabel");
@@ -230,10 +232,17 @@
 
     maxTop = clampInt(n, 2, 500);
     allowMissingTop = !!allowTopMissing.checked;
-
-    score = 0;
+    
+    const s = Number(startScoreInput.value);
+    if (!Number.isInteger(s) || s < 0) {
+      startError.textContent = "Startscore moet 0 of groter zijn.";
+      return;
+    }
+    
+    score = s;
     streak = 0;
     updateHud();
+    
 
     startScreen.classList.add("hidden");
     gameScreen.classList.remove("hidden");
@@ -265,4 +274,3 @@
   // initial dots
   setDots();
 })();
-
