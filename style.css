@@ -173,7 +173,6 @@ input[type="number"]{
   z-index: 5;
 }
 
-/* diagram */
 /* diagram: fixed positioning so it never collapses */
 .diagram{
   position: relative;
@@ -194,6 +193,11 @@ input[type="number"]{
   stroke-linecap: round;
 }
 
+/* wires toggling */
+.wires3{ display:none; }
+.diagram.three .wires2{ display:none; }
+.diagram.three .wires3{ display:block; }
+
 /* boxes */
 .box{
   width: var(--boxW);
@@ -210,10 +214,24 @@ input[type="number"]{
   z-index: 1;
 }
 
-/* positions */
+/* positions (2-split default) */
 .box.top   { top: 40px; }
 .box.left  { top: 190px; transform: translateX(calc(-50% - 130px)); }
 .box.right { top: 190px; transform: translateX(calc(-50% + 130px)); }
+
+/* middle box: hidden unless 3-split */
+.box.mid{ display:none; }
+.diagram.three .box.mid{
+  display:flex;
+  top: 190px;
+  transform: translateX(-50%);
+}
+.diagram.three .box.left{
+  transform: translateX(calc(-50% - 165px));
+}
+.diagram.three .box.right{
+  transform: translateX(calc(-50% + 165px));
+}
 
 /* number text */
 .num{
@@ -222,7 +240,7 @@ input[type="number"]{
   line-height: 1;
 }
 
-/* answer input: make it big and centered */
+/* answer input */
 .ans{
   width: 96px;
   height: 62px;
@@ -230,7 +248,7 @@ input[type="number"]{
   outline: none;
   border-radius: 12px;
   text-align:center;
-  font-size: 46px;     /* <- big */
+  font-size: 46px;
   font-weight: 800;
   line-height: 1;
   background: transparent;
@@ -251,6 +269,9 @@ input[type="number"]{
   .box.top{ top: 36px; }
   .box.left{ top: 186px; transform: translateX(calc(-50% - 90px)); }
   .box.right{ top: 186px; transform: translateX(calc(-50% + 90px)); }
+
+  .diagram.three .box.left{ transform: translateX(calc(-50% - 115px)); }
+  .diagram.three .box.right{ transform: translateX(calc(-50% + 115px)); }
 
   .num{ font-size: 40px; }
   .ans{ font-size: 40px; width: 84px; height: 56px; }

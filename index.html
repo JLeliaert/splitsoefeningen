@@ -27,6 +27,11 @@
         <span>Splitsen EN Sommen</span>
       </label>
 
+      <label class="checkbox">
+        <input id="threeSplit" type="checkbox" />
+        <span>Splitsen in 3</span>
+      </label>
+
       <div id="startError" class="error" aria-live="polite"></div>
 
       <button id="startBtn" class="btn primary">Start</button>
@@ -51,24 +56,36 @@
         <div id="reward" class="reward hidden">Goed gedaan!</div>
 
         <!-- diagram -->
-        <div class="diagram">
+        <div class="diagram" id="diagram">
           <!-- lines behind the boxes -->
-          <svg class="wires" viewBox="0 0 520 320" aria-hidden="true">
+          <svg class="wires wires2" viewBox="0 0 520 320" aria-hidden="true">
             <!-- from bottom of top box (center) to top of left/right boxes -->
             <line x1="260" y1="110" x2="130" y2="205" />
             <line x1="260" y1="110" x2="390" y2="205" />
           </svg>
-        
+
+          <svg class="wires wires3" viewBox="0 0 520 320" aria-hidden="true">
+            <!-- from bottom of top box (center) to top of left/mid/right boxes -->
+            <line x1="260" y1="110" x2="95"  y2="205" />
+            <line x1="260" y1="110" x2="260" y2="205" />
+            <line x1="260" y1="110" x2="425" y2="205" />
+          </svg>
+
           <div class="box top" id="topBox">
             <span class="num" id="topNum"></span>
             <input class="ans hidden" id="topAns" inputmode="numeric" autocomplete="off" />
           </div>
-        
+
           <div class="box left" id="leftBox">
             <span class="num" id="leftNum"></span>
             <input class="ans hidden" id="leftAns" inputmode="numeric" autocomplete="off" />
           </div>
-        
+
+          <div class="box mid" id="midBox">
+            <span class="num" id="midNum"></span>
+            <input class="ans hidden" id="midAns" inputmode="numeric" autocomplete="off" />
+          </div>
+
           <div class="box right" id="rightBox">
             <span class="num" id="rightNum"></span>
             <input class="ans hidden" id="rightAns" inputmode="numeric" autocomplete="off" />
@@ -84,3 +101,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+

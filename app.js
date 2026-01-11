@@ -8,7 +8,7 @@
   const startBtn = document.getElementById("startBtn");
   const startError = document.getElementById("startError");
   const startScoreInput = document.getElementById("startScoreInput");
-
+  const threeSplit = document.getElementById("threeSplit");
 
   const stopBtn = document.getElementById("stopBtn");
   const scoreLabel = document.getElementById("scoreLabel");
@@ -16,17 +16,22 @@
   const dots = document.getElementById("dots");
   const reward = document.getElementById("reward");
 
+  const diagram = document.getElementById("diagram");
+
   const topNum = document.getElementById("topNum");
   const leftNum = document.getElementById("leftNum");
   const rightNum = document.getElementById("rightNum");
+  const midNum = document.getElementById("midNum");
 
   const topAns = document.getElementById("topAns");
   const leftAns = document.getElementById("leftAns");
   const rightAns = document.getElementById("rightAns");
+  const midAns = document.getElementById("midAns");
 
   // ----- State -----
   let maxTop = 10;
   let allowMissingTop = false;
+  let isThreeSplit = false;
 
   let score = 0;
   let streak = 0;
@@ -48,6 +53,14 @@
   const clampInt = (v, min, max) => Math.max(min, Math.min(max, v));
   const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+  // Bias toward the middle (still allows 0 and max, just less often)
+  // Uses average of 2 uniforms -> triangular-ish distribution.
+  const biasedInt = (min, max) => {
+    if (max <= min) return min;
+    const t = (Math.random() + Math.random()) / 2; // 0..1, peaked around 0.5
+    return min + Math.round((max - min) * t);
+  };
+
   function clearTimers() {
     if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
     if (nextTimer) { clearTimeout(nextTimer); nextTimer = null; }
@@ -64,7 +77,7 @@
   }
 
   function resetInputsVisual() {
-    [topAns, leftAns, rightAns].forEach(inp => {
+    [topAns, leftAns, midAns, rightAns].forEach(inp => {
       inp.classList.remove("good", "bad");
       inp.value = "";
       inp.disabled = false;
@@ -72,7 +85,7 @@
   }
 
   function hideAllAnswerInputs() {
-    [topAns, leftAns, rightAns].forEach(inp => inp.classList.add("hidden"));
+    [topAns, leftAns, midAns, rightAns].forEach(inp => inp.classList.add("hidden"));
     activeInput = null;
   }
 
@@ -80,18 +93,25 @@
     hideAllAnswerInputs();
     resetInputsVisual();
 
-    const map = { top: topAns, left: leftAns, right: rightAns };
+    const map = { top: topAns, left: leftAns, mid: midAns, right: rightAns };
     activeInput = map[which];
     activeInput.classList.remove("hidden");
     activeInput.focus();
   }
 
-  function showNumbers({ top, left, right, missing }) {
-    // missing: "top" | "left" | "right"
+  function showNumbers2({ top, left, right, missing }) {
     topNum.textContent = missing === "top" ? "" : String(top);
     leftNum.textContent = missing === "left" ? "" : String(left);
     rightNum.textContent = missing === "right" ? "" : String(right);
+    midNum.textContent = "";
+    showAnswerInput(missing);
+  }
 
+  function showNumbers3({ top, left, mid, right, missing }) {
+    topNum.textContent = missing === "top" ? "" : String(top);
+    leftNum.textContent = missing === "left" ? "" : String(left);
+    midNum.textContent = missing === "mid" ? "" : String(mid);
+    rightNum.textContent = missing === "right" ? "" : String(right);
     showAnswerInput(missing);
   }
 
@@ -122,34 +142,57 @@
     clearTimers();
     reward.classList.add("hidden");
 
-    // choose missing box
-    const cases = allowMissingTop ? ["left", "right", "top"] : ["left", "right"];
-    const missing = cases[randInt(0, cases.length - 1)];
+    diagram.classList.toggle("three", isThreeSplit);
 
-    let top, left, right;
-
-    if (missing === "top") {
-      // pick bottom numbers first, ensure sum <= maxTop and >= 2
-      left = randInt(0, maxTop);
-      right = randInt(0, maxTop - left);
-      top = left + right;
-
-      if (top < 2) {
-        top = 2;
-        left = randInt(0, top);
-        right = top - left;
-      }
+    if (!isThreeSplit) {
+    let missing;
+    if (allowMissingTop && Math.random() < 1/3) {
+      missing = "top";
     } else {
-      top = randInt(2, maxTop);
-      left = randInt(0, top);
-      right = top - left;
+      missing = Math.random() < 0.5 ? "left" : "right";
     }
+
+      const top = randInt(2, maxTop);
+
+      // biased split reduces 0 / top extremes
+      const left = biasedInt(0, top);
+      const right = top - left;
+
+      if (missing === "top") correctAnswer = top;
+      if (missing === "left") correctAnswer = left;
+      if (missing === "right") correctAnswer = right;
+
+      showNumbers2({ top, left, right, missing });
+      updateHud();
+      return;
+    }
+
+    // 3-split
+    let missing;
+    if (allowMissingTop && Math.random() < 1/3) {
+      missing = "top";
+    } else {
+      const r = Math.random();
+      if (r < 1/3) missing = "left";
+      else if (r < 2/3) missing = "mid";
+      else missing = "right";
+    }
+
+    const top = randInt(2, maxTop);
+
+    // biased 3-way split:
+    // pick left biased, then mid biased from remainder, right is rest
+    const left = biasedInt(0, top);
+    const rem1 = top - left;
+    const mid = biasedInt(0, rem1);
+    const right = rem1 - mid;
 
     if (missing === "top") correctAnswer = top;
     if (missing === "left") correctAnswer = left;
+    if (missing === "mid") correctAnswer = mid;
     if (missing === "right") correctAnswer = right;
 
-    showNumbers({ top, left, right, missing });
+    showNumbers3({ top, left, mid, right, missing });
     updateHud();
   }
 
@@ -161,7 +204,6 @@
     updateHud();
 
     if (streak >= streakTarget) {
-      // reward
       reward.classList.remove("hidden");
 
       rewardTimer = setTimeout(() => {
@@ -181,7 +223,6 @@
     updateHud();
 
     retryTimer = setTimeout(() => {
-      // same exercise, just allow retry
       setInputState(null, false);
       if (activeInput) {
         activeInput.value = "";
@@ -192,7 +233,7 @@
 
   function checkAnswerAndReact() {
     if (!activeInput) return;
-    if (activeInput.disabled) return; // ignore during timers
+    if (activeInput.disabled) return;
 
     const val = parseAnswer();
     if (val === null) {
@@ -203,9 +244,8 @@
     else onWrong();
   }
 
-  // enter key on the active input
   function attachEnterHandlers() {
-    [topAns, leftAns, rightAns].forEach(inp => {
+    [topAns, leftAns, midAns, rightAns].forEach(inp => {
       inp.addEventListener("keydown", (e) => {
         if (e.key === "Enter") checkAnswerAndReact();
       });
@@ -232,17 +272,17 @@
 
     maxTop = clampInt(n, 2, 500);
     allowMissingTop = !!allowTopMissing.checked;
-    
+    isThreeSplit = !!threeSplit.checked;
+
     const s = Number(startScoreInput.value);
     if (!Number.isInteger(s) || s < 0) {
       startError.textContent = "Startscore moet 0 of groter zijn.";
       return;
     }
-    
+
     score = s;
     streak = 0;
     updateHud();
-    
 
     startScreen.classList.add("hidden");
     gameScreen.classList.remove("hidden");
@@ -252,11 +292,9 @@
 
   function stopGame() {
     clearTimers();
-    // back to start screen
     gameScreen.classList.add("hidden");
     startScreen.classList.remove("hidden");
     startError.textContent = "";
-    // focus max input
     maxInput.focus();
   }
 
@@ -266,11 +304,10 @@
   startBtn.addEventListener("click", startGame);
   stopBtn.addEventListener("click", stopGame);
 
-  // allow pressing Enter on start screen
   maxInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") startGame();
   });
 
-  // initial dots
   setDots();
 })();
+
